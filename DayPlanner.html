@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Advanced Day Planner</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #e3f2fd, #e1bee7);
+      color: #333;
+      padding: 40px;
+      transition: background 0.3s, color 0.3s;
+    }
+    .dark-mode {
+      background: #121212;
+      color: #eee;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: rgba(255, 255, 255, 0.75);
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      backdrop-filter: blur(10px);
+      transition: background 0.3s;
+    }
+    .dark-mode .container {
+      background: rgba(44, 44, 44, 0.85);
+      backdrop-filter: blur(8px);
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 2.5rem;
+    }
+    .controls, .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    input, select {
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      flex: 1;
+      font-size: 1rem;
+      outline: none;
+    }
+    button {
+      padding: 12px 20px;
+      background: linear-gradient(45deg, #42a5f5, #7e57c2);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.3s ease, transform 0.2s;
+    }
+    button:hover {
+      background: linear-gradient(45deg, #1e88e5, #6a1b9a);
+      transform: translateY(-2px);
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      padding: 15px;
+      border-radius: 12px;
+      background: #ffffffd0;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+      animation: fadeIn 0.5s ease forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .dark-mode li {
+      background: rgba(60, 60, 90, 0.8);
+    }
+    li.completed span.task {
+      text-decoration: line-through;
+      color: #aaa;
+    }
+    .delete-btn {
+      background: #ef5350;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .delete-btn:hover {
+      background: #d32f2f;
+    }
+    .priority {
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: white;
+    }
+    .high { background: #e53935; }
+    .medium { background: #fdd835; color: #333; }
+    .low { background: #43a047; }
+    .dark-mode .priority.medium { color: #222; }
+    .toggle-dark {
+      text-align: right;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="toggle-dark">
+    <button onclick="toggleDarkMode()">🌗 Toggle Dark Mode</button>
+  </div>
+  <div class="container">
+    <h1>🗓️ Advanced Day Planner</h1>
+    <div class="controls">
+      <input type="text" id="taskInput" placeholder="What do you need to do?">
+      <input type="datetime-local" id="dueDate">
+      <select id="priority">
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+      </select>
+      <button onclick="addTask()">➕ Add Task</button>
+    </div>
+    <div class="filters">
+      <input type="text" id="search" placeholder="🔍 Search tasks..." oninput="filterTasks()">
+      <select id="filterPriority" onchange="filterTasks()">
+        <option value="all">All Priorities</option>
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+      </select>
+    </div>
+    <ul id="taskList"></ul>
+  </div>
+  <script>
+    const taskList = document.getElementById("taskList");
+    const search = document.getElementById("search");
+    const filterPriority = document.getElementById("filterPriority");
+
+    function saveTasks() {
+      localStorage.setItem("tasks", taskList.innerHTML);
+    }
+
+    function loadTasks() {
+      taskList.innerHTML = localStorage.getItem("tasks") || "";
+      document.querySelectorAll("li span.task").forEach(span => {
+        span.onclick = () => span.parentElement.classList.toggle("completed");
+      });
+      document.querySelectorAll(".delete-btn").forEach(btn => {
+        btn.onclick = () => {
+          btn.parentElement.remove();
+          saveTasks();
+        };
+      });
+    }
+
+    function addTask() {
+      const taskInput = document.getElementById("taskInput");
+      const dueDate = document.getElementById("dueDate");
+      const priority = document.getElementById("priority").value;
+
+      if (taskInput.value.trim() === "") return;
+
+      const li = document.createElement("li");
+      li.setAttribute("data-priority", priority);
+      li.setAttribute("data-task", taskInput.value.toLowerCase());
+      li.setAttribute("data-due", dueDate.value);
+
+      const span = document.createElement("span");
+      span.textContent = `${taskInput.value} (Due: ${dueDate.value})`;
+      span.classList.add("task");
+      span.onclick = () => li.classList.toggle("completed");
+
+      const tag = document.createElement("span");
+      tag.textContent = priority.charAt(0).toUpperCase() + priority.slice(1);
+      tag.className = `priority ${priority}`;
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "Delete";
+      deleteBtn.className = "delete-btn";
+      deleteBtn.onclick = () => {
+        li.remove();
+        saveTasks();
+      };
+
+      li.appendChild(span);
+      li.appendChild(tag);
+      li.appendChild(deleteBtn);
+      taskList.appendChild(li);
+
+      taskInput.value = "";
+      dueDate.value = "";
+      saveTasks();
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark-mode");
+    }
+
+    function filterTasks() {
+      const keyword = search.value.toLowerCase();
+      const priority = filterPriority.value;
+      document.querySelectorAll("#taskList li").forEach(task => {
+        const matchesText = task.getAttribute("data-task").includes(keyword);
+        const matchesPriority = priority === "all" || task.getAttribute("data-priority") === priority;
+        task.style.display = matchesText && matchesPriority ? "flex" : "none";
+      });
+    }
+
+    function checkReminders() {
+      const now = new Date();
+      document.querySelectorAll("#taskList li").forEach(task => {
+        const due = new Date(task.getAttribute("data-due"));
+        const timeDiff = due - now;
+        if (timeDiff > 0 && timeDiff < 60000 && !task.classList.contains("reminded")) {
+          alert(`Reminder: ${task.querySelector("span.task").textContent}`);
+          task.classList.add("reminded");
+        }
+      });
+    }
+
+    setInterval(checkReminders, 30000);
+    window.onload = loadTasks;
+  </script>
+</body>
+</html>
